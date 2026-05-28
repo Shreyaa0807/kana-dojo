@@ -126,7 +126,7 @@
     "english": "I'm on a different level today!",
     "anime": "JoJo's Bizarre Adventure: Diamond is Unbreakable",
     "character": "Okuyasu Nijimura",
-    "issued": false,
+    "issued": true,
     "completed": false
   },
   {
@@ -686,7 +686,7 @@
     "english": "Bucciarati is here! (alt wording 17)",
     "anime": "JoJo's Bizarre Adventure: Golden Wind",
     "character": "Narancia Ghirga",
-    "issued": false,
+    "issued": true,
     "completed": false
   },
   {

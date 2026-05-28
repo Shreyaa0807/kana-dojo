@@ -73,15 +73,16 @@ MasteryBar renders bar at `percent`% + `stars` Star icons
 user answers correctly during gameplay
     ↓
 incrementCharacterScore(char, 'correct') → characterScores (session, in-memory)
-    ↓ (on session end)
-characterScores merged into characterMastery (persisted in localStorage)
+                                       AND characterMastery (persisted live to localStorage via Zustand persist)
     ↓
-SubsetNew reads characterMastery
+SubsetNew reads characterMastery (reactive — updates in real-time)
     ↓
 getRowProgressAndStars(rowKana) → { progress, stars }
     ↓
 MasteryBar renders bar at `percent`% + `stars` Star icons
 ```
+
+Progress is persisted live on each answer (debounced by 2 seconds). It is no longer batched on session end — closing the browser mid-session no longer loses progress.
 
 ## Per-Character Tracking in Game Modes
 
@@ -112,6 +113,17 @@ Each MasteryBar can show up to 3 stars. The progress bar fills and wraps per cyc
 | Fully mastered (3×target) | Stays at 100% permanently | 3 stars |
 
 Wrong answers do not reduce the `correct` count, so the bar never moves backward — it only stalls.
+
+## Persistence
+
+All mastery progress is persisted live (not batched on session end). Both storage backends use a 2-second debounce to avoid excessive I/O:
+
+| Dojo | Storage | Debounce mechanism |
+|---|---|---|
+| **Kanji / Vocabulary** | IndexedDB via localforage (`useSetProgressStore`) | Manual debounce (`debouncedPersist` with 2s timeout) |
+| **Kana** | localStorage via Zustand persist (`useStatsStore`) | Zustand `debounceTimeout: 2000` |
+
+`clearSetProgress` bypasses the debounce and writes immediately to ensure data is fully cleared. Closing the browser mid-session no longer loses progress — the debounce timeout fires within 2 seconds of the last change.
 
 ## Auto-Collapse
 

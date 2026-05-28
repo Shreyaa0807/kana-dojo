@@ -60,7 +60,23 @@ async function loadPersistedSetProgress(): Promise<AllTimeSetProgress> {
   }
 }
 
-async function persistSetProgress(data: AllTimeSetProgress): Promise<void> {
+const PERSIST_DEBOUNCE_MS = 2000;
+
+let persistTimeoutId: ReturnType<typeof setTimeout> | null = null;
+
+function debouncedPersist(data: AllTimeSetProgress): void {
+  if (persistTimeoutId) clearTimeout(persistTimeoutId);
+  persistTimeoutId = setTimeout(async () => {
+    await setProgressStore.setItem(STORAGE_KEY, data);
+    persistTimeoutId = null;
+  }, PERSIST_DEBOUNCE_MS);
+}
+
+async function persistSetProgressNow(data: AllTimeSetProgress): Promise<void> {
+  if (persistTimeoutId) {
+    clearTimeout(persistTimeoutId);
+    persistTimeoutId = null;
+  }
   await setProgressStore.setItem(STORAGE_KEY, data);
 }
 
@@ -121,7 +137,7 @@ const useSetProgressStore = create<SetProgressState>((set, get) => ({
       return;
     }
 
-    await persistSetProgress(nextData);
+    debouncedPersist(nextData);
   },
 
   recordVocabularyProgress: async (word, questionType) => {
@@ -182,13 +198,13 @@ const useSetProgressStore = create<SetProgressState>((set, get) => ({
       return;
     }
 
-    await persistSetProgress(nextData);
+    debouncedPersist(nextData);
   },
 
   clearSetProgress: async () => {
     const data = createDefaultSetProgress();
     set({ data, isHydrated: true });
-    await persistSetProgress(data);
+    await persistSetProgressNow(data);
   },
 }));
 

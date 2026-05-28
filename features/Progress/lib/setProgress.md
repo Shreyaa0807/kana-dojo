@@ -67,8 +67,9 @@ File: `features/Progress/store/useSetProgressStore.ts`
 
 - Persisted via **localforage** (IndexedDB) under key `kanadojo-set-progress-v1`
 - Shape: `{ kanji: Record<string, { correct }>, vocabulary: Record<string, { meaningCorrect, readingCorrect }> }`
-- The `recordKanjiProgress` / `recordVocabularyProgress` actions cap at `TARGET × MAX_STARS_PER_SET` (e.g., 75 for kanji)
+- The `recordKanjiProgress` / `recordVocabularyProgress` actions cap at `TARGET × MAX_STARS_PER_SET` (e.g., 30 for kanji)
 - Hydrated on app boot via `useSetProgressHydration()`
+- Persisted live on each answer with a **2-second debounce** (`debouncedPersist`). `clearSetProgress` bypasses the debounce and writes immediately.
 
 ### Kana counters
 
@@ -77,6 +78,8 @@ File: `features/Progress/store/useStatsStore.ts`
 - Persisted via **Zustand persist** (localStorage) under key `kanadojo-stats`
 - Shape in `allTimeStats.characterMastery`: `Record<string, { correct, incorrect }>`
 - Correct counts are unbounded — no cap in storage, only in display math
+- **Live persistence**: `incrementCharacterScore` updates `characterMastery` immediately (reactive), persisted by Zustand persist with `debounceTimeout: 2000` (2 seconds). Progress is no longer batched on session end — closing the browser mid-session no longer loses progress.
+- `characterScores` (in-memory) is still maintained for session logging and achievements via `saveSession()`, but the `characterMastery` merge loop has been removed from `saveSession` since it's now redundant.
 
 ## Data Flow
 
